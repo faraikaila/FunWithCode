@@ -20,7 +20,7 @@ typedef struct {
 
 int N, NUM_THREADS, currentPrime = 2, *primes;
 barrier_t barrier;
-FILE file;
+FILE *file;
 pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -28,6 +28,16 @@ void barrier_init(barrier_t* b){
     pthread_mutex_init(&(b->lock), NULL);
     pthread_cond_init(&(b->ok_to_proceed), NULL);
     b->threads_completed = 0;
+}
+
+void getNextPrime(){
+    int i = currentPrime;
+    for ( i = i+1; i < N; i++) {
+        if(primes[i]==0){
+            currentPrime = i;
+            return;
+        }
+    }
 }
 
 void* syncPoint(barrier_t *b){
@@ -43,7 +53,7 @@ void* syncPoint(barrier_t *b){
     else if(b->threads_completed==NUM_THREADS){
         printf("all threads done\n");
         b->threads_completed = 0;
-        currentPrime++;
+        getNextPrime();
         pthread_cond_broadcast(&b->ok_to_proceed);
     }
     
@@ -66,8 +76,11 @@ void *getPrimes(void *threadarg)
                 primes[x] = -1;
         }
     }
-        
-    syncPoint(&barrier);
+        if(NUM_THREADS>1){
+            syncPoint(&barrier);
+        }else{
+            currentPrime++;
+        }
         
     }
     
@@ -82,10 +95,21 @@ int main(int argc, char *argv[])
     
     if(argc<3){
         printf("Argument parse error**.\n\tmain <number> <threads>\n");
-        return 0;
+        return -1;
+    }
+    
+    if(atoi(argv[2])<1){
+        printf("Invalid number of threads\n");
+        return -1;
     }
     
     N = atoi(argv[1]);
+    
+    if(N<2){
+        printf("N MUST be > 2\n");
+        return -1;
+    }
+    
     NUM_THREADS = atoi(argv[2]);
     struct thread_data thread_data_array[NUM_THREADS];
     
@@ -125,23 +149,23 @@ int main(int argc, char *argv[])
     }
     
     
-    file = *fopen("primes.txt", "w");
+    file = fopen("primes.txt", "w");
     int count_primes=0;
     
     printf("prime numbers between %d and %d\n\n",2,N);
- //   fprintf(file, "prime numbers between %d and %d\n\n",2,N);
-    for (int i = 2 ; i < N; i++) {
+    fprintf(file, "prime numbers between %d and %d\n\n",2,N);
+    for (int i = 2 ; i <= N; i++) {
         if(primes[i] == 0){
-           // fprintf(file, "%d ",i);
+            fprintf(file, "%d ",i);
             printf("%d ",i);
             count_primes++;
         }
     }
     
-    printf("\n\n%d prime numbers found\n\n",count_primes);
-  //  fprintf(file,"\n\n%d prime numbers found\n\n",count_primes);
+    printf("\n\n%d prime number(s) found\n\n",count_primes);
+    fprintf(file,"\n\n%d prime number(s) found\n\n",count_primes);
  
-    fclose(&file);
+    fclose(file);
     
     //return 0;
     
