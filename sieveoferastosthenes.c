@@ -6,15 +6,15 @@
 
 struct thread_data
 {
-    int	thread_id;
+    int thread_id;
     int offset;
     int end_point;
 };
 
 typedef struct {
-    pthread_mutex_t		lock;		/* mutex semaphore for the barrier */
-    pthread_cond_t		ok_to_proceed;	/* condition variable for leaving */
-    int				     threads_completed;		/* count of the number who have arrived */
+    pthread_mutex_t     lock;       /* mutex semaphore for the barrier */
+    pthread_cond_t      ok_to_proceed;  /* condition variable for leaving */
+    int                  threads_completed;     /* count of the number who have arrived */
 } barrier_t;
 
 
@@ -46,12 +46,12 @@ void* syncPoint(barrier_t *b){
     b->threads_completed++;
     
     if(b->threads_completed<NUM_THREADS){
-        printf("waiting threads %d\n",b->threads_completed);
+        //printf("waiting threads %d\n",b->threads_completed);
         pthread_cond_wait(&b->ok_to_proceed, &b->lock);
     }
     
     else if(b->threads_completed==NUM_THREADS){
-        printf("all threads done\n");
+        //printf("all threads done\n");
         b->threads_completed = 0;
         getNextPrime();
         pthread_cond_broadcast(&b->ok_to_proceed);
